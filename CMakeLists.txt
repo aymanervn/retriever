@@ -40,10 +40,14 @@ set(RTV_SVC_SOURCES
     src/svc/ipc_server.c
 )
 if(WIN32)
-  list(APPEND RTV_SVC_SOURCES src/svc/vol_win.c)
+  list(APPEND RTV_SVC_SOURCES src/svc/vol_win.c src/svc/tray_win.c)
 endif()
 add_executable(retriever ${RTV_SVC_SOURCES})
 target_link_libraries(retriever PRIVATE rtv_core)
+if(WIN32)
+  set_target_properties(retriever PROPERTIES WIN32_EXECUTABLE TRUE)
+  target_link_libraries(retriever PRIVATE user32 gdi32 shell32)
+endif()
 rtv_strict(retriever)
 
 add_executable(rtv src/cli/main.c src/cli/ipc_client.c)
@@ -63,6 +67,11 @@ if(WIN32)
     set(RTV_RC_DESC "retriever filename search service")
     configure_file(resources/version.rc.in ${CMAKE_BINARY_DIR}/rc/svc.rc @ONLY)
     target_sources(retriever PRIVATE ${CMAKE_BINARY_DIR}/rc/svc.rc)
+    # UAC: raw-volume reads need elevation, so the service manifest demands it
+    # up front instead of failing at open time. Linker flag (not a .manifest
+    # source) because mt.exe refuses to merge a level= that conflicts with the
+    # generator's default asInvoker fragment; the last /MANIFESTUAC wins.
+    target_link_options(retriever PRIVATE "LINKER:/MANIFESTUAC:level='requireAdministrator'")
 
     set(RTV_RC_NAME "rtv")
     set(RTV_RC_DESC "retriever search client")

@@ -6,9 +6,10 @@ static void usage(void)
     fprintf(stderr,
             "retriever " RTV_VERSION " -- instant filename search service\n"
             "\n"
-            "  retriever [C: D: ...]        index NTFS volumes + serve (needs "
-            "admin;\n"
-            "                                no drives given = all fixed NTFS/ReFS)\n"
+            "  retriever [C: D: ...]        index NTFS volumes + serve from the "
+            "tray\n"
+            "                                (elevates via UAC; no drives given "
+            "= all fixed NTFS/ReFS)\n"
             "  retriever --version | --help\n"
             "\n"
             "Clients connect over the pipe/socket line protocol (see "
@@ -16,6 +17,30 @@ static void usage(void)
             "the bundled `rtv` CLI is the reference client. Search modes: %s\n",
             search_modes());
 }
+
+#ifdef _WIN32
+#include <windows.h>
+/* GUI-subsystem exe: no console of its own, so best-effort attach to the
+ * launching shell's console for --help/--version and error output. */
+static void attach_parent_console(void)
+{
+    if (AttachConsole(ATTACH_PARENT_PROCESS))
+    {
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
+    }
+}
+int main(int argc, char **argv);
+int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show)
+{
+    (void)inst;
+    (void)prev;
+    (void)cmd;
+    (void)show;
+    attach_parent_console();
+    return main(__argc, __argv);
+}
+#endif
 
 int main(int argc, char **argv)
 {
@@ -61,28 +86,11 @@ int main(int argc, char **argv)
     }
 
 #ifdef _WIN32
-    if (!win_is_admin())
-        fprintf(stderr, "retriever: warning: not elevated; raw volume access "
-                        "will likely fail\n");
-    int ok = 0;
-    if (ndr)
-    {
-        for (int i = 0; i < ndr; i++)
-            if (win_index_volume(&ix, drives[i]) == 0)
-                ok++;
-    }
-    else
-        ok = win_all_volumes(&ix);
-    if (!ok)
-    {
-        fprintf(stderr, "retriever: no volumes indexed\n");
-        return 1;
-    }
+    return tray_run(&ix, drives, ndr);
 #else
     if (ndr)
         fprintf(stderr, "retriever: note: drive '%c:' ignored off Windows\n", drives[0]);
     fprintf(stderr, "retriever: NTFS indexing needs Windows\n");
     return 1;
 #endif
-    return ipc_serve(&ix);
 }
