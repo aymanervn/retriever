@@ -137,18 +137,6 @@ static uint64_t root_frn_of(char letter)
     return f;
 }
 
-int win_is_admin(void)
-{
-    HANDLE t;
-    TOKEN_ELEVATION e;
-    DWORD n;
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &t))
-        return 0;
-    int r = GetTokenInformation(t, TokenElevation, &e, sizeof e, &n) && e.TokenIsElevated;
-    CloseHandle(t);
-    return r;
-}
-
 static int enum_mft(index_t *ix, int vol, HANDLE h)
 {
     vol_t *v = &ix->vols[vol];

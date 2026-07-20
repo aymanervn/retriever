@@ -10,9 +10,9 @@ int ipc_serve(index_t *ix);
 int ipc_endpoint_busy(void);
 int svc_rescan_all(index_t *ix);
 #ifdef _WIN32
-int win_is_admin(void);
 int win_index_volume(index_t *ix, char letter);
 int win_all_volumes(index_t *ix);
+int tray_run(index_t *ix, const char *drives, int ndr);
 #endif
 
 #endif

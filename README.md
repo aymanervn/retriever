@@ -30,7 +30,8 @@ ctest --test-dir build --output-on-failure
 ## Usage
 
 ```
-retriever                        # index all fixed NTFS/ReFS volumes (run elevated)
+retriever                        # index all fixed NTFS/ReFS volumes (elevates via
+                                 # UAC, then runs from the tray; no console window)
 retriever C: D:                  # specific volumes
 
 rtv report.docx                    # search (default: case-insensitive substring)
