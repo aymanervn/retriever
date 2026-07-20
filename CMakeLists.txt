@@ -83,6 +83,9 @@ endif()
 install(TARGETS retriever rtv RUNTIME DESTINATION .)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.md
         ${CMAKE_CURRENT_SOURCE_DIR}/include/retriever.h DESTINATION .)
+if(WIN32)
+  install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/scripts/register-startup.ps1 DESTINATION .)
+endif()
 
 enable_testing()
 add_executable(re_test tests/re_test.c)
