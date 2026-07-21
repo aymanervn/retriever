@@ -20,8 +20,12 @@ if (-not (Test-Path $Exe)) {
     Write-Error "retriever.exe not found next to this script ($Exe)."
 }
 
+# Task XML rejects a bare username for UserId ("The parameter is incorrect.
+# (7,24):UserId"); it must be DOMAIN\user.
+$User = "$env:USERDOMAIN\$env:USERNAME"
 $Action = New-ScheduledTaskAction -Execute $Exe
-$Trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+$Trigger = New-ScheduledTaskTrigger -AtLogOn -User $User
+$Principal = New-ScheduledTaskPrincipal -UserId $User -RunLevel Highest
 # ExecutionTimeLimit 0 disables the 72h default that would kill the service.
 $Settings = New-ScheduledTaskSettingsSet `
     -AllowStartIfOnBatteries `
@@ -29,8 +33,8 @@ $Settings = New-ScheduledTaskSettingsSet `
     -ExecutionTimeLimit ([TimeSpan]::Zero)
 
 Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger `
-    -RunLevel Highest -Settings $Settings -Force | Out-Null
-Write-Host "Registered '$TaskName' to start elevated at logon of $env:USERNAME."
+    -Principal $Principal -Settings $Settings -Force -ErrorAction Stop | Out-Null
+Write-Host "Registered '$TaskName' to start elevated at logon of $User."
 
-Start-ScheduledTask -TaskName $TaskName
+Start-ScheduledTask -TaskName $TaskName -ErrorAction Stop
 Write-Host "Service started. Remove with: .\register-startup.ps1 -Unregister"
